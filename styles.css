@@ -210,6 +210,10 @@ textarea{resize:vertical;min-height:96px}
   background:#fdecec;color:#b91c1c;border:1px solid #f5c2c2;border-radius:9px;
   padding:10px 14px;font-size:14px;margin-bottom:14px;
 }
+.form-success{
+  background:#e7f6ec;color:#166534;border:1px solid #bfe6cc;border-radius:9px;
+  padding:10px 14px;font-size:14px;margin-bottom:14px;
+}
 
 /* ---------- footer ---------- */
 .footer{background:var(--navy-2);color:#9db8e8;padding:28px 0;font-size:14px}

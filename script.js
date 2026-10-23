@@ -120,10 +120,12 @@
     closeModal();
   });
 
-  /* ---------- inquiry form: validate, then open email with prefilled inquiry ---------- */
+  /* ---------- inquiry form: validate, then send straight to the inbox via Web3Forms ---------- */
   var form = document.getElementById('inquiryForm');
   var errBox = document.getElementById('formError');
-  var EMAIL = 'ahmadraza.eccountant@gmail.com';
+  var okBox = document.getElementById('formSuccess');
+  var submitBtn = document.getElementById('submitBtn');
+  var WEB3FORMS_KEY = '9c0f122f-b1da-4f11-8556-1efaeb6e66c5';
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     var name = document.getElementById('fName').value.trim();
@@ -139,6 +141,7 @@
     if (!business) problems.push('business type');
     if (!software) problems.push('required software');
 
+    okBox.hidden = true;
     if (problems.length) {
       errBox.textContent = 'Please provide ' + problems.join(', ') + '.';
       errBox.hidden = false;
@@ -146,12 +149,42 @@
     }
     errBox.hidden = true;
 
-    var subject = 'Demo request — ' + software + ' (' + business + ')';
-    var body = 'Name: ' + name + '\nContact: ' + contact + '\nBusiness type: ' + business +
-      '\nSoftware: ' + software + '\n\nRequirements:\n' + (msg || '(not specified)');
-    window.location.href = 'mailto:' + EMAIL +
-      '?subject=' + encodeURIComponent(subject) +
-      '&body=' + encodeURIComponent(body);
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        subject: 'New inquiry — ' + software + ' (' + business + ') — Portfolio website',
+        from_name: 'Ahmad Raza Portfolio',
+        botcheck: '',
+        'Name': name,
+        'Email or phone': contact,
+        'Business type': business,
+        'Software': software,
+        'Requirements': msg || '(not specified)'
+      })
+    }).then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data && data.success) {
+          form.reset();
+          okBox.textContent = 'Thank you, ' + name.split(' ')[0] + '! Your inquiry has been received — I will get back to you shortly with a free demo.';
+          okBox.hidden = false;
+          okBox.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+        } else {
+          errBox.textContent = 'Sorry, the inquiry could not be sent. Please email me directly at ahmadraza.eccountant@gmail.com.';
+          errBox.hidden = false;
+        }
+      })
+      .catch(function () {
+        errBox.textContent = 'Sorry, the inquiry could not be sent. Please check your internet connection, or email me directly at ahmadraza.eccountant@gmail.com.';
+        errBox.hidden = false;
+      })
+      .finally(function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Inquiry';
+      });
   });
 
   /* ---------- scroll progress ---------- */
