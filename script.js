@@ -31,25 +31,25 @@
   var PRODUCTS = {
     shop: {
       name: 'Shop POS', target: 'For retail shops & general stores',
-      badge: 'Ready', badgeClass: 'badge-ready', price: 'PKR 35,000', per: 'one-time',
+      badge: 'Ready', badgeClass: 'badge-ready',
       desc: 'Complete billing and stock system for retail shops — fast checkout, inventory and khata in one offline app.',
       features: ['Fast barcode billing with receipts', 'Inventory with low-stock alerts', 'Khata (credit) customer accounts', 'Daily / monthly sales reports', '100% offline with auto-backup', 'License-key protected, one PC per license']
     },
     resto: {
       name: 'RestoPOS', target: 'For restaurants & cafes',
-      badge: 'In development', badgeClass: 'badge-dev', price: 'PKR 50,000+', per: 'one-time',
+      badge: 'In development', badgeClass: 'badge-dev',
       desc: 'Restaurant management with table billing, kitchen order tickets and delivery tracking. Early version running; full release in development.',
       features: ['Table & floor-view management', 'KOT (kitchen order tickets)', 'Dine-in, takeaway & delivery modes', 'Waiter management & staff roles', 'Menu management with categories', 'License-key protected, LAN multi-PC support planned']
     },
     garments: {
       name: 'Garments POS', target: 'For garment & clothing retailers',
-      badge: 'In development', badgeClass: 'badge-dev', price: 'Contact for pricing', per: '',
+      badge: 'In development', badgeClass: 'badge-dev',
       desc: 'POS built for clothing stores — size and color-wise stock, barcode billing and khata. Product and purchase modules done; billing module next.',
       features: ['Size / color variant-wise stock', 'Barcode billing', 'Purchase & supplier management', 'Khata (credit) accounts', 'Stock, purchase & low-stock reports', '100% offline with auto-backup']
     },
     estate: {
       name: 'Estate Manager', target: 'For property dealers',
-      badge: 'Ready', badgeClass: 'badge-ready', price: 'Contact for pricing', per: '',
+      badge: 'Ready', badgeClass: 'badge-ready',
       desc: 'Manage property listings, deals, installments and rental collection in one offline desktop app.',
       features: ['Property listings (plot / house / shop)', 'Client records with CNIC', 'Installment (qist) schedules & tracking', 'Rental monthly collection', 'Deals, bayana & commission', 'Reports with CSV export, auto-backup']
     }
@@ -61,7 +61,6 @@
   var mTarget = document.getElementById('modalTarget');
   var mDesc = document.getElementById('modalDesc');
   var mFeat = document.getElementById('modalFeat');
-  var mPrice = document.getElementById('modalPrice');
   var mDemo = document.getElementById('modalDemo');
   var lastFocus = null;
 
@@ -80,13 +79,6 @@
       li.textContent = f;
       mFeat.appendChild(li);
     });
-    mPrice.innerHTML = '';
-    mPrice.appendChild(document.createTextNode(p.price + ' '));
-    if (p.per) {
-      var s = document.createElement('span');
-      s.textContent = p.per;
-      mPrice.appendChild(s);
-    }
     mDemo.setAttribute('data-demo', p.name);
     modal.hidden = false;
     document.body.style.overflow = 'hidden';
