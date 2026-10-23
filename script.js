@@ -548,6 +548,12 @@
   function answerFor(text) {
     var t = ' ' + text.toLowerCase() + ' ';
     var urdu = isUrdu(t);
+    /* price intent always wins — a question about price must get the price answer,
+       even when a product name is mentioned in the same sentence */
+    var PRICE_STRONG = ['keemat', 'qemat', 'daam', 'price', 'cost', 'rate', 'charges', 'kitni', 'kitna', 'kitne'];
+    for (var pi = 0; pi < PRICE_STRONG.length; pi++) {
+      if (t.indexOf(PRICE_STRONG[pi]) > -1) return { text: urdu ? QA[1].ur : QA[1].en, fallback: false };
+    }
     var best = null, bestHits = 0;
     QA.forEach(function (item) {
       var hits = 0;
