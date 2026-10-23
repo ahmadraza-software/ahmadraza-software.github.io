@@ -215,6 +215,21 @@ textarea{resize:vertical;min-height:96px}
   padding:10px 14px;font-size:14px;margin-bottom:14px;
 }
 
+/* ---------- mini game ---------- */
+.game-box{
+  background:#0b1f3a;border-radius:18px;padding:14px;max-width:940px;margin:0 auto;
+  box-shadow:0 24px 50px -24px rgba(11,31,58,.45);
+}
+#gameCanvas{
+  display:block;width:100%;height:auto;border-radius:10px;cursor:pointer;touch-action:manipulation;
+  background:linear-gradient(180deg,#dcebfd,#f4f8ff);
+}
+.game-bar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:12px 6px 2px}
+.game-score{color:#dbe7ff;font-size:15px}
+.game-score strong{color:#fff}
+.game-hint{color:#8fb0dd;font-size:13.5px;margin-left:auto}
+@media (max-width:640px){ .game-hint{margin-left:0} }
+
 /* ---------- footer ---------- */
 .footer{background:var(--navy-2);color:#9db8e8;padding:28px 0;font-size:14px}
 .footer-inner{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}

@@ -311,3 +311,162 @@
       io.observe(el);
     });
 })();
+
+/* ---------- Cart Dash mini game ---------- */
+(function () {
+  'use strict';
+  var cvs = document.getElementById('gameCanvas');
+  if (!cvs || !cvs.getContext) return;
+  var ctx = cvs.getContext('2d');
+  var btn = document.getElementById('gameBtn');
+  var scoreEl = document.getElementById('gameScore');
+  var bestEl = document.getElementById('gameBest');
+  var W = 900, H = 240, GROUND = 198;
+  var best = 0;
+  try { best = parseInt(localStorage.getItem('cartDashBest') || '0', 10) || 0; } catch (e) {}
+  bestEl.textContent = best;
+
+  var state = 'ready', raf = null, frame = 0, speed = 5, score = 0, coinsGot = 0, dist = 0;
+  var cart = { x: 96, y: GROUND - 46, groundY: GROUND - 46, vy: 0, spin: 0 };
+  var boxes = [], coins = [], spawnT = 80, coinT = 160;
+  var sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#dcebfd'); sky.addColorStop(1, '#f4f8ff');
+
+  function updateScore() { scoreEl.textContent = score; }
+  function reset() {
+    frame = 0; speed = 5; score = 0; coinsGot = 0; dist = 0;
+    boxes.length = 0; coins.length = 0; spawnT = 90; coinT = 170;
+    cart.y = cart.groundY; cart.vy = 0; updateScore();
+  }
+  function jump() {
+    if (state === 'playing' && cart.y >= cart.groundY - 0.5) cart.vy = -12.6;
+  }
+  function start() {
+    reset(); state = 'playing'; btn.textContent = 'Restart';
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(step);
+  }
+  function over() {
+    state = 'over'; cancelAnimationFrame(raf);
+    if (score > best) {
+      best = score; bestEl.textContent = best;
+      try { localStorage.setItem('cartDashBest', String(best)); } catch (e) {}
+    }
+    btn.textContent = 'Play again'; draw();
+  }
+
+  function drawBG() {
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    var off = (dist * 0.3) % 130;
+    ctx.fillStyle = 'rgba(37,99,235,.07)';
+    for (var i = -1; i < 9; i++) {
+      var x = i * 130 - off;
+      ctx.fillRect(x, GROUND - 92, 86, 92);
+      ctx.fillRect(x, GROUND - 62, 86, 4);
+      ctx.fillRect(x, GROUND - 32, 86, 4);
+    }
+    ctx.fillStyle = '#123058'; ctx.fillRect(0, GROUND, W, H - GROUND);
+    ctx.fillStyle = 'rgba(255,255,255,.28)';
+    var goff = dist % 46;
+    for (var gx = -46; gx < W; gx += 46) ctx.fillRect(gx - goff + 46, GROUND + 18, 22, 4);
+  }
+  function drawCart() {
+    var x = cart.x, y = cart.y;
+    ctx.save();
+    ctx.fillStyle = '#f59e0b'; ctx.fillRect(x + 12, y - 3, 13, 10);
+    ctx.fillStyle = '#2563eb'; ctx.fillRect(x + 30, y - 6, 9, 13);
+    ctx.strokeStyle = '#0b1f3a'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - 9, y + 9); ctx.lineTo(x + 1, y + 9);
+    ctx.moveTo(x, y + 7); ctx.lineTo(x + 54, y + 7); ctx.lineTo(x + 47, y + 33); ctx.lineTo(x + 7, y + 33);
+    ctx.closePath(); ctx.stroke();
+    ctx.lineWidth = 1.6; ctx.strokeStyle = 'rgba(11,31,58,.55)';
+    for (var bx = 11; bx < 50; bx += 9) {
+      ctx.beginPath(); ctx.moveTo(x + bx, y + 9); ctx.lineTo(x + bx - 2, y + 31); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(x + 3, y + 20); ctx.lineTo(x + 51, y + 20); ctx.stroke();
+    ctx.fillStyle = '#0b1f3a';
+    [[x + 14, y + 39], [x + 42, y + 39]].forEach(function (w) {
+      ctx.beginPath(); ctx.arc(w[0], w[1], 7, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#9db9e8'; ctx.lineWidth = 1.6;
+      for (var a = 0; a < 3; a++) {
+        var ang = cart.spin + a * Math.PI / 3;
+        ctx.beginPath();
+        ctx.moveTo(w[0] - Math.cos(ang) * 5, w[1] - Math.sin(ang) * 5);
+        ctx.lineTo(w[0] + Math.cos(ang) * 5, w[1] + Math.sin(ang) * 5);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#0b1f3a'; ctx.lineWidth = 3;
+    });
+    ctx.restore();
+  }
+  function drawBox(b) {
+    var top = GROUND - b.h;
+    ctx.fillStyle = '#c98d4e'; ctx.fillRect(b.x, top, b.w, b.h);
+    ctx.fillStyle = '#a9713a'; ctx.fillRect(b.x + b.w / 2 - 3, top, 6, b.h);
+    ctx.fillRect(b.x, top, b.w, 4);
+    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillRect(b.x + 5, top + 9, 12, 8);
+  }
+  function drawCoin(c) {
+    var y = c.y + Math.sin(frame / 12 + c.x / 30) * 2.5;
+    ctx.beginPath(); ctx.arc(c.x, y, c.r, 0, Math.PI * 2);
+    ctx.fillStyle = '#fbbf24'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#d97706'; ctx.stroke();
+    ctx.fillStyle = '#92400e'; ctx.font = '700 8px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Rs', c.x, y + 0.5);
+  }
+  function panel(title, line1, line2) {
+    ctx.fillStyle = 'rgba(11,31,58,.55)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    ctx.font = '800 34px Arial'; ctx.fillText(title, W / 2, 96);
+    ctx.font = '600 17px Arial'; ctx.fillText(line1, W / 2, 128);
+    ctx.font = '400 14px Arial'; ctx.fillStyle = '#c9dbf7'; ctx.fillText(line2, W / 2, 154);
+  }
+  function draw() {
+    drawBG();
+    coins.forEach(drawCoin);
+    boxes.forEach(drawBox);
+    drawCart();
+    if (state === 'ready') panel('CART DASH', 'Dodge the stock boxes, grab the coins!', 'Press SPACE or tap Play');
+    if (state === 'over') panel('GAME OVER', 'Score: ' + score + '   ·   Best: ' + best, 'Tap Play again to retry');
+  }
+  function step() {
+    frame++; dist += speed; speed = Math.min(11, speed + 0.0035);
+    cart.vy += 0.62; cart.y += cart.vy;
+    if (cart.y >= cart.groundY) { cart.y = cart.groundY; cart.vy = 0; }
+    cart.spin += speed * 0.05;
+    if (--spawnT <= 0) {
+      boxes.push({ x: W + 12, w: 30 + Math.random() * 16, h: 26 + Math.random() * 22 });
+      spawnT = Math.max(44, (72 + Math.random() * 58) * (5.4 / speed));
+    }
+    if (--coinT <= 0) {
+      var cy = GROUND - 72 - Math.random() * 46;
+      for (var i = 0; i < 3; i++) coins.push({ x: W + 24 + i * 30, y: cy, r: 9 });
+      coinT = 180 + Math.random() * 170;
+    }
+    var i, b;
+    for (i = boxes.length - 1; i >= 0; i--) {
+      b = boxes[i]; b.x -= speed;
+      if (b.x < -60) { boxes.splice(i, 1); continue; }
+      if (cart.x + 52 > b.x + 3 && cart.x + 4 < b.x + b.w - 3 && cart.y + 44 > GROUND - b.h + 4) { over(); return; }
+    }
+    for (i = coins.length - 1; i >= 0; i--) {
+      var c = coins[i]; c.x -= speed;
+      if (c.x < -20) { coins.splice(i, 1); continue; }
+      var dx = c.x - (cart.x + 28), dy = c.y - (cart.y + 18);
+      if (dx * dx + dy * dy < 36 * 36) { coins.splice(i, 1); coinsGot++; }
+    }
+    score = Math.floor(dist / 8) + coinsGot * 15; updateScore();
+    draw();
+    if (state === 'playing') raf = requestAnimationFrame(step);
+  }
+  function act() { if (state === 'playing') jump(); else start(); }
+  btn.addEventListener('click', start);
+  cvs.addEventListener('click', act);
+  cvs.addEventListener('touchstart', function (e) { e.preventDefault(); act(); }, { passive: false });
+  window.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space' && e.code !== 'ArrowUp' && e.code !== 'KeyW') return;
+    var r = cvs.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) { e.preventDefault(); act(); }
+  });
+  reset(); draw();
+})();
