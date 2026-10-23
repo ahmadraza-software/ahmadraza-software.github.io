@@ -465,8 +465,173 @@
   cvs.addEventListener('touchstart', function (e) { e.preventDefault(); act(); }, { passive: false });
   window.addEventListener('keydown', function (e) {
     if (e.code !== 'Space' && e.code !== 'ArrowUp' && e.code !== 'KeyW') return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
     var r = cvs.getBoundingClientRect();
     if (r.top < window.innerHeight && r.bottom > 0) { e.preventDefault(); act(); }
   });
   reset(); draw();
+})();
+
+/* ---------- Smart assistant (rule-based chat) ---------- */
+(function () {
+  'use strict';
+  var fab = document.getElementById('chatFab');
+  var panel = document.getElementById('chatPanel');
+  var body = document.getElementById('chatBody');
+  var chipsBox = document.getElementById('chatChips');
+  var form = document.getElementById('chatForm');
+  var input = document.getElementById('chatText');
+  var closeBtn = document.getElementById('chatClose');
+  if (!fab || !panel || !body || !form) return;
+
+  var QA = [
+    { k: ['salam', 'assalam', 'hello', 'hi', 'hey', 'aoa'],
+      en: "Hello! I'm Ahmad's assistant. I can tell you about his software (Shop POS, RestoPOS, Garments POS, Estate Manager), the free demo, delivery and support. What would you like to know?",
+      ur: "Assalam-o-Alaikum! Main Ahmad ka assistant hun. Main aap ko un ke software (Shop POS, RestoPOS, Garments POS, Estate Manager), free demo, delivery aur support ke baray mein bata sakta hun. Aap kya janna chahte hain?" },
+    { k: ['price', 'cost', 'rate', 'charges', 'keemat', 'qemat', 'kitne', 'kitna', 'paisay'],
+      en: "Prices depend on your business and the features you need, so Ahmad confirms them personally. The demo is completely free, and there are no monthly fees — it's a lifetime license.\nFor an exact quote, fill the inquiry form on this page and Ahmad will reply himself.",
+      ur: "Price har business ki zaroorat aur features par hoti hai, is liye Ahmad exact price khud confirm karte hain. Demo bilkul FREE hai, aur monthly fees koi nahi — lifetime license hai.\nExact price ke liye is page ka inquiry form bhar dein, Ahmad khud jawab dein ge." },
+    { k: ['demo', 'trial', 'try', 'test karna'],
+      en: "The demo is free. Fill the inquiry form on this page (or email ahmadraza.eccountant@gmail.com) and tell us your business type — Ahmad will show the software working on your own business data. No payment before the demo.",
+      ur: "Demo bilkul free hai. Is page ka inquiry form bhar dein (ya ahmadraza.eccountant@gmail.com par email karein) aur apne business ki type likh dein — Ahmad software aap ke apne business data par chala kar dikhayenge. Demo se pehle koi payment nahi." },
+    { k: ['shop pos', 'shop', 'dukaan', 'dukan', 'retail', 'kiryana', 'general store'],
+      en: "Shop POS (ready now) is a complete billing & stock system for retail shops: fast barcode billing with printed receipts, inventory with low-stock alerts, khata (credit) accounts, and daily/monthly reports. 100% offline with auto-backup. Want a free demo?",
+      ur: "Shop POS (ready hai) retail shops ke liye complete billing aur stock system hai: tez barcode billing + printed receipt, inventory with low-stock alerts, khata (udhaar) accounts, aur daily/monthly reports. 100% offline, auto-backup ke saath. Free demo chahiye?" },
+    { k: ['resto', 'restaurant', 'hotel', 'cafe', 'kitchen', 'table'],
+      en: "RestoPOS is for restaurants & cafes: table/floor management, KOT (kitchen order tickets), and dine-in, takeaway & delivery orders. It is currently in development — an early version is already running. Ahmad can show you the progress.",
+      ur: "RestoPOS restaurants aur cafes ke liye hai: table/floor management, KOT (kitchen tickets), aur dine-in, takeaway aur delivery orders. Ye abhi development mein hai — early version chal raha hai. Ahmad progress dikha sakte hain." },
+    { k: ['garment', 'kapra', 'kapray', 'clothing', 'boutique'],
+      en: "Garments POS is built for clothing stores: size & color-wise stock, barcode billing, purchase & supplier records, khata accounts and stock reports. It is in development — the product and purchase modules are complete. Ask Ahmad for a progress demo.",
+      ur: "Garments POS kapron ki shops ke liye hai: size aur color ke hisaab se stock, barcode billing, purchase aur supplier records, khata accounts aur stock reports. Ye development mein hai — product aur purchase modules mukammal hain. Ahmad se progress demo maang sakte hain." },
+    { k: ['estate', 'property', 'plot', 'dealer', 'rent', 'kiraya', 'qist', 'installment'],
+      en: "Estate Manager (ready now) is for property dealers: property listings (plot/house/shop), client records with CNIC, deals with bayana & commission, installment (qist) schedules, monthly rent collection and reports with CSV export. 100% offline.",
+      ur: "Estate Manager (ready hai) property dealers ke liye hai: property listings (plot/house/shop), CNIC ke saath client records, bayana aur commission wale deals, qist schedules, monthly rent collection aur CSV reports. 100% offline." },
+    { k: ['offline', 'internet', 'wifi', 'online', 'net '],
+      en: "All of Ahmad's software is 100% offline — no internet needed. Your data stays on your own computer, with automatic backups.",
+      ur: "Ahmad ke tamam software 100% offline hain — internet ki zaroorat nahi. Aap ka data aap ke apne computer par rehta hai, automatic backup ke saath." },
+    { k: ['deliver', 'delivery', 'install', 'setup', 'how long', 'kitne din', 'kab milega', 'time'],
+      en: "Ready software (Shop POS, Estate Manager) is set up quickly once you confirm — Ahmad personally helps with installation and setup. For the exact timeline for your business, send an inquiry and he will confirm.",
+      ur: "Ready software (Shop POS, Estate Manager) confirm karne ke baad jald setup ho jata hai — installation aur setup mein Ahmad khud madad karte hain. Apne business ke liye exact time chahiye to inquiry bhej dein, wo confirm kar dein ge." },
+    { k: ['training', 'support', 'seekhna', 'sikha', 'masla', 'problem', 'help'],
+      en: "Every product comes with setup guidance, and Ahmad personally supports his customers by email (ahmadraza.eccountant@gmail.com). If anything goes wrong, email him what happened and he will help you fix it.",
+      ur: "Har product ke saath setup guidance milti hai, aur Ahmad apne customers ko khud email par support karte hain (ahmadraza.eccountant@gmail.com). Koi masla ho to email kar dein, wo hal kar dein ge." },
+    { k: ['license', 'licence', 'monthly', 'subscription', 'payment', 'pay', 'buy', 'khareed'],
+      en: "Simple model: one lifetime license — no monthly fees, no subscription. You see a free demo first and pay only when you are satisfied. For the exact price for your business, ask through the inquiry form.",
+      ur: "Simple model hai: ek dafa ka lifetime license — na monthly fees, na subscription. Pehle free demo dekhein, pasand aye tab hi payment. Exact price ke liye inquiry form se pooch lein." },
+    { k: ['custom', 'website', 'web', 'banwana', 'new software', 'apna software', 'system'],
+      en: "Ahmad also builds custom software around your business problem — billing systems, inventory control, khata management and business websites. Describe your problem in the inquiry form and he will suggest the right solution.",
+      ur: "Ahmad aap ke business ke maslay ke hisaab se custom software bhi banate hain — billing systems, inventory control, khata management aur business websites. Inquiry form mein apna masla likh dein, wo behtareen hal suggest karein ge." },
+    { k: ['contact', 'email', 'phone', 'number', 'whatsapp', 'rabta', 'call'],
+      en: "You can reach Ahmad by email at ahmadraza.eccountant@gmail.com, or fill the inquiry form on this page — every inquiry lands straight in his inbox and he replies personally.",
+      ur: "Ahmad se rabta email par karein: ahmadraza.eccountant@gmail.com — ya isi page ka inquiry form bhar dein. Har inquiry seedha un ki inbox mein jati hai aur wo khud jawab dete hain." },
+    { k: ['who', 'ahmad', 'kaun', 'developer', 'about'],
+      en: "Ahmad Raza is a software developer from Pakistan. He builds offline POS, ERP and inventory software for shops, restaurants and growing businesses — practical systems, with a free demo before you pay anything.",
+      ur: "Ahmad Raza Pakistan se software developer hain. Wo shops, restaurants aur growing businesses ke liye offline POS, ERP aur inventory software banate hain — pehle free demo, payment baad mein." },
+    { k: ['game', 'khel', 'dash', 'play'],
+      en: "There's a mini game on this page — Cart Dash! Scroll to the 'Take a break' section: dodge the stock boxes and grab the coins. Space or tap to jump.",
+      ur: "Is page par ek mini game bhi hai — Cart Dash! 'Take a break' wale section mein jayen: stock boxes se bachein, coins pakrein. Space ya tap se jump hota hai." },
+    { k: ['thank', 'shukriya', 'great', 'nice', 'ok', 'okay', 'theek'],
+      en: "You're welcome! If you'd like a free demo, the inquiry form on this page takes less than a minute — Ahmad replies personally.",
+      ur: "Khush aamdeed! Agar free demo chahiye to is page ka inquiry form ek minute se kam mein bhar jata hai — Ahmad khud jawab dete hain." }
+  ];
+  var FALLBACK = {
+    en: "That's a good question for Ahmad himself. Tap the button below and your question will be placed in the inquiry form — just add your name and contact, and Ahmad will reply personally. Or email him at ahmadraza.eccountant@gmail.com.",
+    ur: "Ye sawal Ahmad khud behtar jawab dein ge. Neeche wala button dabayen — aap ka sawal inquiry form mein likh diya jayega, bas apna naam aur contact add kar dein, Ahmad khud jawab dein ge. Ya email karein: ahmadraza.eccountant@gmail.com."
+  };
+  var CHIP_LIST = ['Free demo', 'Shop POS', 'RestoPOS', 'Garments POS', 'Estate Manager', 'Delivery time', 'Price?', 'Contact Ahmad'];
+  var greeted = false, lastQuestion = '';
+
+  function isUrdu(text) {
+    return /\b(hai|hain|ka|ki|ke|ko|mein|mai|mujhe|chahiye|kaise|kya|kitne|kitna|wala|wali|batao|karna|karo|bhai|aur|nahi|dukaan|kapray|keemat)\b/.test(text);
+  }
+  function answerFor(text) {
+    var t = ' ' + text.toLowerCase() + ' ';
+    var urdu = isUrdu(t);
+    var best = null, bestHits = 0;
+    QA.forEach(function (item) {
+      var hits = 0;
+      item.k.forEach(function (kw) { if (t.indexOf(kw) > -1) hits++; });
+      if (hits > bestHits) { bestHits = hits; best = item; }
+    });
+    if (best) return { text: urdu ? best.ur : best.en, fallback: false };
+    return { text: urdu ? FALLBACK.ur : FALLBACK.en, fallback: true };
+  }
+  function addMsg(text, who) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + who;
+    d.textContent = text;
+    body.appendChild(d);
+    body.scrollTop = body.scrollHeight;
+    return d;
+  }
+  function addAction(label, fn) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'chat-action';
+    b.textContent = label;
+    b.addEventListener('click', fn);
+    body.appendChild(b);
+    body.scrollTop = body.scrollHeight;
+  }
+  function botReply(text) {
+    var ans = answerFor(text);
+    var typing = document.createElement('div');
+    typing.className = 'msg bot typing';
+    typing.innerHTML = '<i></i><i></i><i></i>';
+    body.appendChild(typing);
+    body.scrollTop = body.scrollHeight;
+    setTimeout(function () {
+      typing.remove();
+      addMsg(ans.text, 'bot');
+      if (ans.fallback) {
+        addAction('Send my question to Ahmad →', function () {
+          var msgField = document.getElementById('fMsg');
+          if (msgField && lastQuestion) msgField.value = lastQuestion;
+          toggle(false);
+          var contact = document.getElementById('contact');
+          if (contact) contact.scrollIntoView({ behavior: 'smooth' });
+          var nameField = document.getElementById('fName');
+          if (nameField) setTimeout(function () { nameField.focus({ preventScroll: true }); }, 650);
+        });
+      }
+    }, 550 + Math.random() * 350);
+  }
+  function send(text) {
+    var clean = (text || '').trim();
+    if (!clean) return;
+    lastQuestion = clean;
+    addMsg(clean, 'user');
+    input.value = '';
+    botReply(clean);
+  }
+  CHIP_LIST.forEach(function (label) {
+    var c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'chip';
+    c.textContent = label;
+    c.addEventListener('click', function () { send(label); });
+    chipsBox.appendChild(c);
+  });
+  function toggle(open) {
+    var willOpen = typeof open === 'boolean' ? open : panel.hidden;
+    panel.hidden = !willOpen;
+    fab.setAttribute('aria-expanded', String(willOpen));
+    if (willOpen && !greeted) {
+      greeted = true;
+      setTimeout(function () {
+        addMsg("Assalam-o-Alaikum! I'm Ahmad's assistant. Ask me anything about his software, the free demo, delivery or support — or tap a topic below.", 'bot');
+      }, 250);
+    }
+    if (willOpen) setTimeout(function () { input.focus({ preventScroll: true }); }, 80);
+  }
+  fab.addEventListener('click', function () { toggle(); });
+  closeBtn.addEventListener('click', function () { toggle(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) toggle(false);
+  });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    send(input.value);
+  });
 })();

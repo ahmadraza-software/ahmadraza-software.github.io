@@ -312,6 +312,29 @@
   </div>
 </footer>
 
+<!-- SMART ASSISTANT -->
+<button class="chat-fab" id="chatFab" type="button" aria-label="Open chat assistant" aria-expanded="false">
+  <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+  <span>Ask me</span>
+</button>
+<div class="chat-panel" id="chatPanel" hidden role="dialog" aria-label="Chat with Ahmad's assistant">
+  <div class="chat-head">
+    <div>
+      <strong>Ahmad&rsquo;s Assistant</strong>
+      <span>Replies instantly &middot; English / Roman Urdu</span>
+    </div>
+    <button class="chat-close" id="chatClose" type="button" aria-label="Close chat">&times;</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-chips" id="chatChips"></div>
+  <form class="chat-input" id="chatForm">
+    <input type="text" id="chatText" placeholder="Type your question&hellip;" autocomplete="off" aria-label="Type your question">
+    <button type="submit" class="chat-send" aria-label="Send message">
+      <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4l17.8-7.5c.8-.35.8-1.45 0-1.8L3.4 3.6c-.66-.29-1.39.2-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .7.73 1.2 1.39.91z"/></svg>
+    </button>
+  </form>
+</div>
+
 <!-- PRODUCT DETAILS MODAL -->
 <div class="modal" id="productModal" hidden>
   <div class="modal-overlay" data-close></div>
